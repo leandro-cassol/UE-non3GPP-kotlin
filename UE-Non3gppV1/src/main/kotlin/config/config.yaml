@@ -32,4 +32,4 @@ n3iwfinfo:
   ipsecifaceprotocol: "udp"
 
 logs:
-  level: "trace" # trace, info
+  level: "info" # trace, info

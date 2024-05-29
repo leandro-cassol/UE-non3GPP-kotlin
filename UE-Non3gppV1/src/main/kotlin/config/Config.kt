@@ -7,7 +7,7 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 
-private const val PATH_FILE_CONFIG = "/UE-Non3gppV1/src/main/kotlin"
+private const val PATH_FILE_CONFIG = "/src/main/kotlin"
 
 
 data class Config(
