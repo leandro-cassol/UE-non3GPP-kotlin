@@ -690,19 +690,6 @@ class UEnon3Gpp {
             greKeyField = ((it.qfiList[0].toUInt() and 0x3FU) shl 24)
         }
 
-/*
-        // New GRE tunnel interface
-        val newGRETunnel = Gretun().apply {
-            linkAttrs = LinkAttrs().apply {
-                name = cfg.ue.linkGRE.name
-            }
-            local = ueAddr.IP
-            remote = upIPAddr
-            iKey = greKeyField.toLong()
-            oKey = greKeyField.toLong()
-        }
-*/
-
         println("............................")
         println("")
         print("ueAddr.IP: ")
@@ -721,25 +708,6 @@ class UEnon3Gpp {
 
         EnvironmentSetting().configMTUGreTun(cfg)
 
-        // Link address 60.60.0.1/20
-/*
-        val linkGREAddr = Addr().apply {
-            iPNet = IPNet().apply {
-                IP = this.IP.iPv4(
-                    cfg.ue.linkGRE.ipAddress[0],
-                    cfg.ue.linkGRE.ipAddress[1],
-                    cfg.ue.linkGRE.ipAddress[2],
-                    cfg.ue.linkGRE.ipAddress[3]
-                )
-                mask = this.mask.iPv4Mask(
-                    cfg.ue.linkGRE.mask[0],
-                    cfg.ue.linkGRE.mask[1],
-                    cfg.ue.linkGRE.mask[2],
-                    cfg.ue.linkGRE.mask[3]
-                )
-            }
-        }
-*/
 
         // COMANDO GO
         // netlink.AddrAdd(linkGRE, linkGREAddr)
@@ -749,17 +717,6 @@ class UEnon3Gpp {
         // Set GRE interface up
         // netlink.LinkSetUp(linkGRE)
         NetlinkUtils().upLinkInterface(cfg.ue.linkGRE.name)
-
-        /*
-        val upRoute = Route().apply {
-            //linkIndex = linkGRE.attrs().index
-            dst = IPNet().apply {
-                IP = ConstNet().IPv4zero
-                mask = IPMask().iPv4Mask(0, 0, 0, 0)
-            }
-            table = 1
-        }
-        */
 
         // COMANDO GO
         // netlink.RouteAdd(upRoute)
