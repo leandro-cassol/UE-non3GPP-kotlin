@@ -12,7 +12,7 @@ import javax.crypto.Mac
 private val log = LoggerFactory.getLogger("CryptoUtils")
 
 fun encryptProcedure(ikeSecurityAssociation: IkeSecurityAssociation, ikePayload: IKEPayloadContainer, responseIKEMessage: IKEMessage) {
-    log.info("EncryptProcedure")
+    log.trace("EncryptProcedure")
     val transformIntegrityAlgorithm = ikeSecurityAssociation.integrityAlgorithm
     val transformEncryptionAlgorithm = ikeSecurityAssociation.encryptionAlgorithm
     val checksumLength = 12
@@ -48,7 +48,7 @@ fun encryptProcedure(ikeSecurityAssociation: IkeSecurityAssociation, ikePayload:
 }
 
 fun decryptProcedure(ikeSecurityAssociation: IkeSecurityAssociation, ikeMessage: IKEMessage, encryptedPayload: Encrypted): IKEPayloadContainer {
-    log.info("DecryptProcedure")
+    log.trace("DecryptProcedure")
     val transformIntegrityAlgorithm = ikeSecurityAssociation.integrityAlgorithm
     val transformEncryptionAlgorithm = ikeSecurityAssociation.encryptionAlgorithm
     val checksumLength = 12
@@ -126,7 +126,7 @@ fun generateKeyForIKESA(ikeSecurityAssociation: IkeSecurityAssociation) {
     ikeSecurityAssociation.skPi = keyStream.copyOfRange(0, lengthSKpi)
     keyStream = keyStream.drop(lengthSKpi).toByteArray()
     ikeSecurityAssociation.skPr = keyStream.copyOfRange(0, lengthSKpr)
-    keyStream = keyStream.drop(lengthSKpr).toByteArray()
+    //keyStream = keyStream.drop(lengthSKpr).toByteArray()
 }
 
 fun concatenateNonceAndSPI(nonce: ByteArray, spiInitiator: ULong, spiResponder: ULong): ByteArray {

@@ -15,8 +15,8 @@ fun main() {
     var log = LoggerFactory.getLogger("Main")
     log.info("UE-non3GPP version $VERSION")
 
-    val config = Config.getConfig()
-    if (config.logs.level == "trace") {
+    val cfg = Config.getConfig()
+    if (cfg.logs.level == "trace") {
         setGlobalLogLevel("TRACE")
     } else {
         setGlobalLogLevel("INFO")
@@ -27,7 +27,7 @@ fun main() {
     log.trace("Log - TRACE")
 
     val ue = UEnon3Gpp()
-    ue.ueNon3GPPConnection()
+    ue.ueNon3GPPConnection(cfg)
 }
 
 fun setGlobalLogLevel(level: String) {

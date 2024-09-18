@@ -1,6 +1,7 @@
 package engine.exchange.pkg.ike.message
 
 import engine.util.toShort
+import engine.util.toUByteArrayString
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.InetAddress
@@ -96,7 +97,7 @@ class IKEPayloadContainer : ArrayList<IKEPayload>() {
     }
 
     fun encode(): ByteArray {
-        log.info("Encoding IKE payloads")
+        log.trace("Encoding IKE payloads")
         var ikeMessagePayloadData = ByteArray(0)
         for (index in indices) {
             val payload = this[index]
@@ -115,23 +116,23 @@ class IKEPayloadContainer : ArrayList<IKEPayload>() {
             val payloadLength = payloadData.size.toShort()
             ByteBuffer.wrap(payloadData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(payloadLength)  // pos 2 e 3
 
-            log.trace("payloadData [${payloadData.size}] = ${payloadData.toUByteArray().contentToString()}")
+            log.trace("payloadData [${payloadData.size}] = ${payloadData.toUByteArrayString()}")
             ikeMessagePayloadData += payloadData
         }
-        log.trace("ikeMessagePayloadData [${ikeMessagePayloadData.size}] " + ikeMessagePayloadData.toUByteArray().contentToString())
+        log.trace("ikeMessagePayloadData [${ikeMessagePayloadData.size}] " + ikeMessagePayloadData.toUByteArrayString())
         return ikeMessagePayloadData
     }
 
 
     fun decode(nextPayload: UByte, rawData: ByteArray) {
-        log.info("Decoding IKE payloads")
+        log.trace("Decoding IKE payloads")
 
         var payloadType = nextPayload
         var data = rawData
 
         while (data.isNotEmpty()) {
             // bounds checking
-            log.trace("rawData [${data.size}] = " + data.toUByteArray().contentToString())
+            log.trace("rawData [${data.size}] = " + data.toUByteArrayString())
             log.trace("DecodePayload(): Decode 1 payload")
 
             // Verifica se há bytes suficientes para decodificar o próximo payload
@@ -194,7 +195,7 @@ class IKEPayloadContainer : ArrayList<IKEPayload>() {
         clear()
     }
 
-    fun buildNotification(protocolID: Byte, notifyMessageType: Int, spi: ByteArray?, notificationData: ByteArray?) {
+    private fun buildNotification(protocolID: Byte, notifyMessageType: Int, spi: ByteArray?, notificationData: ByteArray?) {
         val notification = Notification()
         notification.protocolID = protocolID.toUByte()
         notification.notifyMessageType = notifyMessageType.toUShort()
@@ -429,7 +430,7 @@ class SecurityAssociation : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[SecurityAssociation] marshal(): Start marshalling")
+        log.trace("[SecurityAssociation] marshal(): Start marshalling")
 
         var securityAssociationData = ByteArray(0)
 
@@ -486,30 +487,30 @@ class SecurityAssociation : IKEPayload {
                         // TV
                         ByteBuffer.wrap(attributeData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(transform.attributeValue.toShort())  // pos 2 e 3
                     }
-                    log.trace("attributeData [${attributeData.size}] = ${attributeData.toUByteArray().contentToString()}")
+                    log.trace("attributeData [${attributeData.size}] = ${attributeData.toUByteArrayString()}")
                     transformData += attributeData
                 }
 
                 ByteBuffer.wrap(transformData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(transformData.size.toShort())  // pos 2 e 3
 
-                log.trace("transformData [${transformData.size}] = ${transformData.toUByteArray().contentToString()}")
+                log.trace("transformData [${transformData.size}] = ${transformData.toUByteArrayString()}")
                 proposalTransformData += transformData
             }
 
-            log.trace("proposalTransformData [${proposalTransformData.size}] = ${proposalTransformData.toUByteArray().contentToString()}")
-            log.trace("proposalData [${proposalData.size}] = ${proposalData.toUByteArray().contentToString()}")
+            log.trace("proposalTransformData [${proposalTransformData.size}] = ${proposalTransformData.toUByteArrayString()}")
+            log.trace("proposalData [${proposalData.size}] = ${proposalData.toUByteArrayString()}")
             proposalData += proposalTransformData
             ByteBuffer.wrap(proposalData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(proposalData.size.toShort())  // pos 2 e 3
 
             securityAssociationData += proposalData
         }
-        log.trace("securityAssociationData [${securityAssociationData.size}] = ${securityAssociationData.toUByteArray().contentToString()}")
+        log.trace("securityAssociationData [${securityAssociationData.size}] = ${securityAssociationData.toUByteArrayString()}")
         return securityAssociationData
     }
 
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[SecurityAssociation] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[SecurityAssociation] unmarshal(): Start unmarshalling received bytes")
         log.trace("[SecurityAssociation] unmarshal(): Payload length ${rawData.size} bytes  ")
 
         var index = 0
@@ -624,7 +625,7 @@ class IKEMessage {
     }
 
     fun encode(): ByteArray {
-        log.info("Encoding IKE message")
+        log.trace("Encoding IKE message")
 
         var ikeMessageData = ByteArray(28)
 
@@ -651,8 +652,8 @@ class IKEMessage {
     fun decode(rawData: ByteArray) {
         // IKE message packet format this implementation referenced is
         // defined in RFC 7296, Section 3.1
-        log.info("Decoding IKE message")
-        log.trace("Received IKE message: [${(rawData.size)}] ${rawData.toUByteArray().contentToString()}")
+        log.trace("Decoding IKE message")
+        log.trace("Received IKE message: [${(rawData.size)}] ${rawData.toUByteArrayString()}")
 
         // bounds checking
         if (rawData.size < 28) {
@@ -696,7 +697,7 @@ class KeyExchange: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeKE
 
     override fun marshal(): ByteArray {
-        log.info("[KeyExchange] marshal(): Start marshalling")
+        log.trace("[KeyExchange] marshal(): Start marshalling")
         var keyExchangeDataByteArray = ByteArray(4)
         ByteBuffer.wrap(keyExchangeDataByteArray, 0, 2).order(ByteOrder.BIG_ENDIAN).putShort(diffieHellmanGroup.toShort())  // pos 0 e 1
         keyExchangeDataByteArray += keyExchangeData
@@ -704,7 +705,7 @@ class KeyExchange: IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[KeyExchange] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[KeyExchange] unmarshal(): Start unmarshalling received bytes")
         log.trace("[KeyExchange] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[KeyExchange] unmarshal(): Unmarshal 1 key exchange data")
@@ -732,14 +733,14 @@ class Certificate: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeCERT
 
     override fun marshal(): ByteArray {
-        log.info("[Certificate] marshal(): Start marshalling")
+        log.trace("[Certificate] marshal(): Start marshalling")
         val certificateData = ByteArray(1)
         certificateData[0] = certificateEncoding.toByte()
         return certificateData + this.certificateData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Certificate] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Certificate] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Certificate] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Certificate] unmarshal(): Unmarshal 1 certificate")
@@ -767,14 +768,14 @@ class CertificateRequest: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeCERTreq
 
     override fun marshal(): ByteArray {
-        log.info("[CertificateRequest] marshal(): Start marshalling")
+        log.trace("[CertificateRequest] marshal(): Start marshalling")
         val certificateRequestData = ByteArray(1)
         certificateRequestData[0] = certificateEncoding.toByte()
         return certificateRequestData + this.certificationAuthority
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[CertificateRequest] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[CertificateRequest] unmarshal(): Start unmarshalling received bytes")
         log.trace("[CertificateRequest] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[CertificateRequest] unmarshal(): Unmarshal 1 certificate request")
@@ -802,14 +803,14 @@ class Authentication: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeAUTH
 
     override fun marshal(): ByteArray {
-        log.info("[Authentication] marshal(): Start marshalling")
+        log.trace("[Authentication] marshal(): Start marshalling")
         val authenticationData = ByteArray(4)
         authenticationData[0] = this.authenticationMethod.toByte()
         return authenticationData + this.authenticationData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Authentication] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Authentication] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Authentication] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Authentication] unmarshal(): Unmarshal 1 authentication")
@@ -841,7 +842,7 @@ class Notification : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[Notification] marshal(): Start marshalling")
+        log.trace("[Notification] marshal(): Start marshalling")
         var notificationData = ByteArray(4)
         notificationData[0] = protocolID.toByte()
         notificationData[1] = spi.size.toByte()
@@ -853,7 +854,7 @@ class Notification : IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Notification] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Notification] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Notification] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Notification] unmarshal(): Unmarshal 1 notification")
@@ -888,12 +889,12 @@ class Nonce : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[Nonce] marshal(): Start marshalling")
+        log.trace("[Nonce] marshal(): Start marshalling")
         return nonceData.copyOf()
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Nonce] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Nonce] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Nonce] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Nonce] unmarshal(): Unmarshal 1 nonce")
@@ -917,12 +918,12 @@ class VendorID : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[VendorID] marshal(): Start marshalling")
+        log.trace("[VendorID] marshal(): Start marshalling")
         return vendorIDData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[VendorID] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[VendorID] unmarshal(): Start unmarshalling received bytes")
         log.trace("[VendorID] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[VendorID] unmarshal(): Unmarshal 1 vendor ID")
@@ -944,16 +945,16 @@ class IdentificationInitiator: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeIDi
 
     override fun marshal(): ByteArray {
-        log.info("[Identification] marshal(): Start marshalling")
+        log.trace("[Identification] marshal(): Start marshalling")
         var identificationData = ByteArray(4)
         identificationData[0] = idType
         identificationData += idData
-        log.trace("identificationData [${identificationData.size}] " + identificationData.toUByteArray().contentToString())
+        log.trace("identificationData [${identificationData.size}] " + identificationData.toUByteArrayString())
         return identificationData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Identification] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Identification] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Identification] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Identification] unmarshal(): Unmarshal 1 identification")
@@ -977,14 +978,14 @@ class IdentificationResponder: IKEPayload {
     override fun type(): IKEPayloadType = IKEPayloadType.TypeIDr
 
     override fun marshal(): ByteArray {
-        log.info("[Identification] marshal(): Start marshalling")
+        log.trace("[Identification] marshal(): Start marshalling")
         val identificationData = ByteArray(4)
         identificationData[0] = idType
         return identificationData + idData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Identification] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Identification] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Identification] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Identification] unmarshal(): Unmarshal 1 identification")
@@ -1016,7 +1017,7 @@ class Delete : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[Delete] marshal(): Start marshalling")
+        log.trace("[Delete] marshal(): Start marshalling")
         if (spis.size != (spiSize.toInt() * numberOfSPI.toInt())) {
             throw Exception("Total bytes of all SPIs not correct")
         }
@@ -1030,7 +1031,7 @@ class Delete : IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Delete] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Delete] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Delete] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Delete] unmarshal(): Unmarshal 1 delete")
@@ -1067,7 +1068,7 @@ class Encrypted: IKEPayload {
     override fun type() = IKEPayloadType.TypeSK
 
     override fun marshal(): ByteArray {
-        log.info("[Encrypted] marshal(): Start marshalling")
+        log.trace("[Encrypted] marshal(): Start marshalling")
         if (encryptedData.isEmpty()) {
             log.warn("[Encrypted] The encrypted data is empty")
         }
@@ -1075,7 +1076,7 @@ class Encrypted: IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Encrypted] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Encrypted] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Encrypted] unmarshal(): Payload length ${rawData.size} bytes")
         encryptedData += rawData
     }
@@ -1116,7 +1117,7 @@ class Configuration: IKEPayload {
     override fun type() = IKEPayloadType.TypeCP
 
     override fun marshal(): ByteArray {
-        log.info("[Configuration] marshal(): Start marshalling")
+        log.trace("[Configuration] marshal(): Start marshalling")
         var configurationData = ByteArray(4)
         configurationData[0] = configurationType.toByte()
 
@@ -1132,7 +1133,7 @@ class Configuration: IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[Configuration] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[Configuration] unmarshal(): Start unmarshalling received bytes")
         log.trace("[Configuration] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[Configuration] unmarshal(): Unmarshal 1 configuration")
@@ -1178,7 +1179,7 @@ class EAP: IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[EAP] marshal(): Start marshalling")
+        log.trace("[EAP] marshal(): Start marshalling")
 
         var eapData = ByteArray(4)
         eapData[0] = code.toByte()
@@ -1193,7 +1194,7 @@ class EAP: IKEPayload {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[EAP] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[EAP] unmarshal(): Start unmarshalling received bytes")
         log.trace("[EAP] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             log.trace("[EAP] unmarshal(): Unmarshal 1 EAP")
@@ -1271,7 +1272,7 @@ class EAPIdentity : EAPTypeFormat {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[EAP][Identity] marshal(): Start marshalling")
+        log.trace("[EAP][Identity] marshal(): Start marshalling")
         if (identityData.isEmpty()) {
             throw Exception("EAPIdentity: EAP identity is empty")
         }
@@ -1281,7 +1282,7 @@ class EAPIdentity : EAPTypeFormat {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[EAP][Identity] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[EAP][Identity] unmarshal(): Start unmarshalling received bytes")
         log.trace("[EAP][Identity] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.size > 1) {
             identityData += rawData.sliceArray(1 until rawData.size)
@@ -1304,7 +1305,7 @@ class EAPNotification: EAPTypeFormat {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[EAP][Notification] marshal(): Start marshalling")
+        log.trace("[EAP][Notification] marshal(): Start marshalling")
         if (notificationData.isEmpty()) {
             throw Exception("EAPNotification: EAP notification is empty")
         }
@@ -1315,7 +1316,7 @@ class EAPNotification: EAPTypeFormat {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[EAP][Notification] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[EAP][Notification] unmarshal(): Start unmarshalling received bytes")
         log.trace("[EAP][Notification] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.size > 1) {
             notificationData += rawData.sliceArray(1 until rawData.size)
@@ -1338,7 +1339,7 @@ class EAPNak: EAPTypeFormat {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[EAP][Nak] marshal(): Start marshalling")
+        log.trace("[EAP][Nak] marshal(): Start marshalling")
         if (nakData.isEmpty()) {
             throw Exception(null, Error("EAPNak: EAP nak is empty"))
         }
@@ -1348,7 +1349,7 @@ class EAPNak: EAPTypeFormat {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[EAP][Nak] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[EAP][Nak] unmarshal(): Start unmarshalling received bytes")
         log.trace("[EAP][Nak] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.size > 1) {
             nakData += rawData.sliceArray(1 until rawData.size)
@@ -1373,7 +1374,7 @@ class EAPExpanded: EAPTypeFormat {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[EAP][Expanded] marshal(): Start marshalling")
+        log.trace("[EAP][Expanded] marshal(): Start marshalling")
         val eapExpandedData = ByteArray(8)
 
         val vendorIDMasked = vendorID and 0x00FFFFFFu
@@ -1390,7 +1391,7 @@ class EAPExpanded: EAPTypeFormat {
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[EAP][Expanded] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[EAP][Expanded] unmarshal(): Start unmarshalling received bytes")
         log.trace("[EAP][Expanded] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             if (rawData.size < 8) {
@@ -1422,7 +1423,7 @@ class TrafficSelectorInitiator : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[TrafficSelectorInitiator] marshal(): Start marshalling")
+        log.trace("[TrafficSelectorInitiator] marshal(): Start marshalling")
 
         if (trafficSelectors.isEmpty()) {
             throw Exception("TrafficSelector: Contains no traffic selector for marshalling message")
@@ -1431,7 +1432,7 @@ class TrafficSelectorInitiator : IKEPayload {
         var trafficSelectorData = ByteArray(4)
         trafficSelectorData[0] = trafficSelectors.size.toByte()
 
-        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArray().contentToString()}")
+        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArrayString()}")
 
         for (selector in trafficSelectors) {
             if (selector.tsType == TS_IPV4_ADDR_RANGE) {
@@ -1454,16 +1455,16 @@ class TrafficSelectorInitiator : IKEPayload {
             individualTrafficSelectorData += selector.startAddress
             individualTrafficSelectorData += selector.endAddress
             ByteBuffer.wrap(individualTrafficSelectorData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(individualTrafficSelectorData.size.toShort())  // pos 2 e 3
-            log.trace("individualTrafficSelectorData [${individualTrafficSelectorData.size}] = ${individualTrafficSelectorData.toUByteArray().contentToString()}")
+            log.trace("individualTrafficSelectorData [${individualTrafficSelectorData.size}] = ${individualTrafficSelectorData.toUByteArrayString()}")
 
             trafficSelectorData += individualTrafficSelectorData
         }
-        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArray().contentToString()}")
+        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArrayString()}")
         return trafficSelectorData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[TrafficSelectorInitiator] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[TrafficSelectorInitiator] unmarshal(): Start unmarshalling received bytes")
         log.trace("[TrafficSelectorInitiator] unmarshal(): Payload length ${rawData.size} bytes")
         if (rawData.isNotEmpty()) {
             var data = rawData.copyOf()
@@ -1477,42 +1478,46 @@ class TrafficSelectorInitiator : IKEPayload {
                     throw IllegalArgumentException("TrafficSelector: No sufficient bytes to decode next individual traffic selector length in header")
                 }
                 val trafficSelectorType = data[0]
-                if (trafficSelectorType == TS_IPV4_ADDR_RANGE.toByte()) {
-                    val selectorLength = ByteBuffer.wrap(data, 2, 2).order(ByteOrder.BIG_ENDIAN).short
-                    if (selectorLength != 16.toShort()) {
-                        throw IllegalArgumentException("TrafficSelector: A TS_IPV4_ADDR_RANGE type traffic selector should have length 16 bytes")
+                when (trafficSelectorType) {
+                    TS_IPV4_ADDR_RANGE.toByte() -> {
+                        val selectorLength = ByteBuffer.wrap(data, 2, 2).order(ByteOrder.BIG_ENDIAN).short
+                        if (selectorLength != 16.toShort()) {
+                            throw IllegalArgumentException("TrafficSelector: A TS_IPV4_ADDR_RANGE type traffic selector should have length 16 bytes")
+                        }
+                        if (data.size < selectorLength) {
+                            throw IllegalArgumentException("TrafficSelector: No sufficient bytes to decode next individual traffic selector")
+                        }
+                        val individualTrafficSelector = IndividualTrafficSelector()
+                        individualTrafficSelector.tsType = data[0].toUByte()
+                        individualTrafficSelector.ipProtocolID = data[1].toUByte()
+                        individualTrafficSelector.startPort = ByteBuffer.wrap(data, 4, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
+                        individualTrafficSelector.endPort = ByteBuffer.wrap(data, 6, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
+                        individualTrafficSelector.startAddress = data.copyOfRange(8, 12)
+                        individualTrafficSelector.endAddress = data.copyOfRange(12, 16)
+                        trafficSelectors.add(individualTrafficSelector)
+                        data = data.copyOfRange(16, data.size)
                     }
-                    if (data.size < selectorLength) {
-                        throw IllegalArgumentException("TrafficSelector: No sufficient bytes to decode next individual traffic selector")
+                    TS_IPV6_ADDR_RANGE.toByte() -> {
+                        val selectorLength = ByteBuffer.wrap(data, 2, 2).order(ByteOrder.BIG_ENDIAN).short
+                        if (selectorLength != 40.toShort()) {
+                            throw IllegalArgumentException("TrafficSelector: A TS_IPV6_ADDR_RANGE type traffic selector should have length 40 bytes")
+                        }
+                        if (data.size < selectorLength) {
+                            throw IllegalArgumentException("TrafficSelector: No sufficient bytes to decode next individual traffic selector")
+                        }
+                        val individualTrafficSelector = IndividualTrafficSelector()
+                        individualTrafficSelector.tsType = data[0].toUByte()
+                        individualTrafficSelector.ipProtocolID = data[1].toUByte()
+                        individualTrafficSelector.startPort = ByteBuffer.wrap(data, 4, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
+                        individualTrafficSelector.endPort = ByteBuffer.wrap(data, 6, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
+                        individualTrafficSelector.startAddress = data.copyOfRange(8, 24)
+                        individualTrafficSelector.endAddress = data.copyOfRange(24, 40)
+                        trafficSelectors.add(individualTrafficSelector)
+                        data = data.copyOfRange(40, data.size)
                     }
-                    val individualTrafficSelector = IndividualTrafficSelector()
-                    individualTrafficSelector.tsType = data[0].toUByte()
-                    individualTrafficSelector.ipProtocolID = data[1].toUByte()
-                    individualTrafficSelector.startPort = ByteBuffer.wrap(data, 4, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
-                    individualTrafficSelector.endPort = ByteBuffer.wrap(data, 6, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
-                    individualTrafficSelector.startAddress = data.copyOfRange(8, 12)
-                    individualTrafficSelector.endAddress = data.copyOfRange(12, 16)
-                    trafficSelectors.add(individualTrafficSelector)
-                    data = data.copyOfRange(16, data.size)
-                } else if (trafficSelectorType == TS_IPV6_ADDR_RANGE.toByte()) {
-                    val selectorLength = ByteBuffer.wrap(data, 2, 2).order(ByteOrder.BIG_ENDIAN).short
-                    if (selectorLength != 40.toShort()) {
-                        throw IllegalArgumentException("TrafficSelector: A TS_IPV6_ADDR_RANGE type traffic selector should have length 40 bytes")
+                    else -> {
+                        throw IllegalArgumentException("TrafficSelector: Unsupported traffic selector type")
                     }
-                    if (data.size < selectorLength) {
-                        throw IllegalArgumentException("TrafficSelector: No sufficient bytes to decode next individual traffic selector")
-                    }
-                    val individualTrafficSelector = IndividualTrafficSelector()
-                    individualTrafficSelector.tsType = data[0].toUByte()
-                    individualTrafficSelector.ipProtocolID = data[1].toUByte()
-                    individualTrafficSelector.startPort = ByteBuffer.wrap(data, 4, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
-                    individualTrafficSelector.endPort = ByteBuffer.wrap(data, 6, 2).order(ByteOrder.BIG_ENDIAN).short.toUShort()
-                    individualTrafficSelector.startAddress = data.copyOfRange(8, 24)
-                    individualTrafficSelector.endAddress = data.copyOfRange(24, 40)
-                    trafficSelectors.add(individualTrafficSelector)
-                    data = data.copyOfRange(40, data.size)
-                } else {
-                    throw IllegalArgumentException("TrafficSelector: Unsupported traffic selector type")
                 }
             }
         }
@@ -1576,7 +1581,7 @@ class TrafficSelectorResponder : IKEPayload {
     }
 
     override fun marshal(): ByteArray {
-        log.info("[TrafficSelectorResponder] marshal(): Start marshalling")
+        log.trace("[TrafficSelectorResponder] marshal(): Start marshalling")
 
         if (trafficSelectors.isEmpty()) {
             throw Exception("TrafficSelector: Contains no traffic selector for marshalling message")
@@ -1585,7 +1590,7 @@ class TrafficSelectorResponder : IKEPayload {
         var trafficSelectorData = ByteArray(4)
         trafficSelectorData[0] = trafficSelectors.size.toByte()
 
-        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArray().contentToString()}")
+        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArrayString()}")
 
         for (individualTrafficSelector in trafficSelectors) {
             if (individualTrafficSelector.tsType == TS_IPV4_ADDR_RANGE) {
@@ -1615,15 +1620,15 @@ class TrafficSelectorResponder : IKEPayload {
             individualTrafficSelectorData += individualTrafficSelector.endAddress
             ByteBuffer.wrap(individualTrafficSelectorData, 2, 2).order(ByteOrder.BIG_ENDIAN).putShort(individualTrafficSelectorData.size.toShort())
 
-            log.trace("individualTrafficSelectorData [${individualTrafficSelectorData.size}] = ${individualTrafficSelectorData.toUByteArray().contentToString()}")
+            log.trace("individualTrafficSelectorData [${individualTrafficSelectorData.size}] = ${individualTrafficSelectorData.toUByteArrayString()}")
             trafficSelectorData += individualTrafficSelectorData
         }
-        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArray().contentToString()}")
+        log.trace("trafficSelectorData [${trafficSelectorData.size}] = ${trafficSelectorData.toUByteArrayString()}")
         return trafficSelectorData
     }
 
     override fun unmarshal(rawData: ByteArray) {
-        log.info("[TrafficSelectorResponder] unmarshal(): Start unmarshalling received bytes")
+        log.trace("[TrafficSelectorResponder] unmarshal(): Start unmarshalling received bytes")
         log.trace("[TrafficSelectorResponder] unmarshal(): Payload length ${rawData.size} bytes")
 
         var data = rawData

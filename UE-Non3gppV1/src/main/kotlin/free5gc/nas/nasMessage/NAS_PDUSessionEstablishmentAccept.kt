@@ -122,12 +122,11 @@ class PDUSessionEstablishmentAccept {
 
                 PDUSessionEstablishmentAcceptPDUAddressType -> {
                     pduAddress = PDUAddress.newPDUAddress(ieiN.toUByte())
-                    val auxLen = pduAddress!!.octet.size
-                    pduAddress!!.setLen(auxLen.toUByte())
+                    pduAddress!!.setLen(buffer.get().toUByte())
 
                     val auxBuffer = ByteArray(pduAddress!!.getLen().toInt())
                     buffer.get(auxBuffer)
-                    pduAddress!!.octet = auxBuffer.toUByteArray()
+                    auxBuffer.toUByteArray().copyInto(pduAddress!!.octet, destinationOffset = 0)
                 }
 
                 PDUSessionEstablishmentAcceptRQTimerValueType -> {
@@ -141,7 +140,7 @@ class PDUSessionEstablishmentAccept {
 
                     val auxBuffer = ByteArray(sNSSAI!!.getLen().toInt())
                     buffer.get(auxBuffer)
-                    sNSSAI!!.octet = auxBuffer.toUByteArray()
+                    auxBuffer.toUByteArray().copyInto(sNSSAI!!.octet, destinationOffset = 0)
                 }
 
                 PDUSessionEstablishmentAcceptAlwaysonPDUSessionIndicationType -> {

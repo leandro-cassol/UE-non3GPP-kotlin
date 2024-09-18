@@ -33,7 +33,6 @@ import kotlin.experimental.and
 class UEnon3Gpp {
     private val log = LoggerFactory.getLogger(UEnon3Gpp::class.java)
 
-    private val cfg: Config = Config.getConfig()
     private var n3ue: N3iwfUe? = null
     private var ue: RanUeContext? = null
     private var n3iwfUDPAddrIP: InetAddress? = null
@@ -41,7 +40,7 @@ class UEnon3Gpp {
     private var udpConnection: DatagramSocket? = null
     private var tcpConnWithN3IWF: Socket? = null
 
-    private fun initCommunicationElements() {
+    private fun initCommunicationElements(cfg: Config) {
         ue = createRanUEContext(cfg)
         /* new N3IWF Ue*/
         n3ue = createN3IWFUe()
@@ -131,7 +130,7 @@ class UEnon3Gpp {
 
         // Send to N3IWF
         val ikeMessageData = ikeMessage.encode()
-        log.trace("ikeMessageData [${ikeMessageData.size}] " + ikeMessageData.toUByteArray().contentToString())
+        log.trace("ikeMessageData [${ikeMessageData.size}] " + ikeMessageData.toUByteArrayString())
 
         /*
         ikeMessageData[172] =
@@ -179,7 +178,7 @@ class UEnon3Gpp {
     }
 
 
-    private fun ikeAuthEapExchange(ikeMessage: IKEMessage, ikePayload: IKEPayloadContainer, eapIdentifier: UByte, ikeSecurityAssociation: IkeSecurityAssociation) {
+    private fun ikeAuthEapExchange(cfg: Config, ikeMessage: IKEMessage, ikePayload: IKEPayloadContainer, eapIdentifier: UByte, ikeSecurityAssociation: IkeSecurityAssociation) {
         log.info("ikeAuthEapExchange")
 
         /* 1º Registration Request */
@@ -232,7 +231,7 @@ class UEnon3Gpp {
         // Send to N3IWF
         var ikeMessageData = ikeMessage.encode()
 
-        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArray().contentToString()}")
+        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArrayString()}")
         // Envia 140
         udpConnection?.send(DatagramPacket(ikeMessageData, ikeMessageData.size, n3iwfUDPAddrIP, n3iwfUDPAddrPort!!.toInt()))
 
@@ -245,7 +244,7 @@ class UEnon3Gpp {
         ikeMessage.payloads.reset()
 
         var receiveN3iwf = Arrays.copyOfRange(buffer, 0, packet.length)
-        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArray().contentToString()}")
+        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArrayString()}")
         // Recebe 124
         ikeMessage.decode(receiveN3iwf)
 
@@ -264,11 +263,11 @@ class UEnon3Gpp {
         val rand = decodedNAS.gmmMessage!!.authenticationRequest!!.authenticationParameterRAND!!.getRANDValue()
 
         val resStat = ue!!.deriveRESstarAndSetKey(ue!!.authenticationSubs!!, rand.toByteArray(), "5G:mnc093.mcc208.3gppnetwork.org")
-        log.trace("resStat[${resStat.size}] = ${resStat.toUByteArray().contentToString()}")
+        log.trace("resStat[${resStat.size}] = ${resStat.toUByteArrayString()}")
 
         // send NAS Authentication Response
         var pdu = getAuthenticationResponse(resStat, "")
-        log.trace("pdu[${pdu.size}] = ${pdu.toUByteArray().contentToString()}")
+        log.trace("pdu[${pdu.size}] = ${pdu.toUByteArrayString()}")
 
         /* 2º Registration Request */
         ikeMessage.payloads.reset()
@@ -296,13 +295,13 @@ class UEnon3Gpp {
         eap = ikePayload.buildEAP(EAPCode.EAPCodeResponse.value, eapReq.identifier)
         eap.eapTypeData.buildEAPExpanded(VendorID3GPP.toUInt(), VendorTypeEAP5G.toUInt(), eapVendorTypeData)
 
-        log.trace("eapVendorTypeData[${eapVendorTypeData.size}] = ${eapVendorTypeData.toUByteArray().contentToString()}")
+        log.trace("eapVendorTypeData[${eapVendorTypeData.size}] = ${eapVendorTypeData.toUByteArrayString()}")
         encryptProcedure(ikeSecurityAssociation, ikePayload, ikeMessage)
 
         // Send to N3IWF
         ikeMessageData = ikeMessage.encode()
 
-        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArray().contentToString()}")
+        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArrayString()}")
         // Envia 108
         udpConnection?.send(DatagramPacket(ikeMessageData, ikeMessageData.size, n3iwfUDPAddrIP, n3iwfUDPAddrPort!!.toInt()))
 
@@ -315,7 +314,7 @@ class UEnon3Gpp {
         ikeMessage.payloads.reset()
 
         receiveN3iwf = Arrays.copyOfRange(buffer, 0, packet.length)
-        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArray().contentToString()}")
+        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArrayString()}")
         // Recebe 108
         ikeMessage.decode(receiveN3iwf)
 
@@ -375,7 +374,7 @@ class UEnon3Gpp {
         // Send to N3IWF
         ikeMessageData = ikeMessage.encode()
 
-        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArray().contentToString()}")
+        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArrayString()}")
         // Envia 140
 
         udpConnection?.send(DatagramPacket(ikeMessageData, ikeMessageData.size, n3iwfUDPAddrIP, n3iwfUDPAddrPort!!.toInt()))
@@ -387,7 +386,7 @@ class UEnon3Gpp {
         udpConnection?.receive(packet)
 
         receiveN3iwf = Arrays.copyOfRange(buffer, 0, packet.length)
-        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArray().contentToString()}")
+        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArrayString()}")
         // Recebe 76
 
         ikeMessage.payloads.reset()
@@ -405,7 +404,7 @@ class UEnon3Gpp {
         }
     }
 
-    private fun ikeAuth(ikeMessage: IKEMessage, ikePayloadParam: IKEPayloadContainer, ikeSecurityAssociation: IkeSecurityAssociation): Pair<IPNet, TCPAddr> {
+    private fun ikeAuth(cfg: Config, ikeMessage: IKEMessage, ikePayloadParam: IKEPayloadContainer, ikeSecurityAssociation: IkeSecurityAssociation): Pair<IPNet, TCPAddr> {
         ikeMessage.payloads.reset()
         n3ue!!.n3iwfIkeSecurityAssociation!!.initiatorMessageID++
         ikeMessage.buildIKEHeader(
@@ -429,7 +428,7 @@ class UEnon3Gpp {
         // Send to N3IWF
         val ikeMessageData = ikeMessage.encode()
 
-        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArray().contentToString()}")
+        log.trace("Send to N3IWF ikeMessageData[${ikeMessageData.size}] = ${ikeMessageData.toUByteArrayString()}")
         // Envia 92
 
         udpConnection?.send(DatagramPacket(ikeMessageData, ikeMessageData.size, n3iwfUDPAddrIP, n3iwfUDPAddrPort!!.toInt()))
@@ -447,7 +446,7 @@ class UEnon3Gpp {
         ikeMessage.payloads.reset()
 
         val receiveN3iwf = Arrays.copyOfRange(buffer, 0, packet.length)
-        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArray().contentToString()}")
+        log.trace("Receive to N3IWF receiveN3iwf[${receiveN3iwf.size}] = ${receiveN3iwf.toUByteArrayString()}")
         // Recebe 236
         ikeMessage.decode(receiveN3iwf)
 
@@ -526,7 +525,7 @@ class UEnon3Gpp {
         return Pair(ueAddr, n3iwfNASAddr)
     }
 
-    private fun nasRegistration(ueAddr: IPNet, n3iwfNasAddrIP: TCPAddr) {
+    private fun nasRegistration(cfg: Config, ueAddr: IPNet, n3iwfNasAddrIP: TCPAddr) {
         val ipSecInterfaceName = cfg.ue.ipSecInterfaceName
 
         // Verifica se a interface de rede existe e está up
@@ -555,7 +554,7 @@ class UEnon3Gpp {
     }
 
 
-    private fun uePDUSessionSetup(ikeMessage: IKEMessage, ikePayload: IKEPayloadContainer, ikeSecurityAssociation: IkeSecurityAssociation): Pair<PDUQoSInfo?, IP> {
+    private fun uePDUSessionSetup(cfg: Config, ikeMessage: IKEMessage, ikePayload: IKEPayloadContainer, ikeSecurityAssociation: IkeSecurityAssociation): Pair<PDUQoSInfo?, IP> {
         val sNssai = Snssai(cfg.ue.snssai.sst, cfg.ue.snssai.sd)
 
         val pdu = getUlNasTransportPduSessionEstablishmentRequest(
@@ -684,7 +683,7 @@ class UEnon3Gpp {
     }
 
 
-    private fun greTunSetup(qosInfo: PDUQoSInfo?, upIPAddr: IP, ueAddr: IPNet) {
+    private fun greTunSetup(cfg: Config, qosInfo: PDUQoSInfo?, upIPAddr: IP, ueAddr: IPNet) {
         var greKeyField = 0u
 
         qosInfo?.let {
@@ -768,15 +767,12 @@ class UEnon3Gpp {
     }
 
 
-    fun ueNon3GPPConnection() {
-        /* initial config */
-        val cfg = Config.getConfig()
-
+    fun ueNon3GPPConnection(cfg: Config) {
         val environmentSetting = EnvironmentSetting()
         environmentSetting.cleanEnvironment(cfg)
 
         /* create communitcaion elements */
-        initCommunicationElements()
+        initCommunicationElements(cfg)
 
         /* ---- 1º IKE SA INIT --- */
         val (ikeMessage, proposal, ikeSecurityAssociation, ikePayload) = ikeSaInit(cfg)
@@ -785,19 +781,19 @@ class UEnon3Gpp {
         val eapIdentifier = ikeAuthRequest(ikeMessage, proposal, ikeSecurityAssociation, ikePayload)
 
         /* -- 3º IKE_AUTH - EAP exchange | 3 Requisições -- refatorar --- */
-        ikeAuthEapExchange(ikeMessage, ikePayload, eapIdentifier, ikeSecurityAssociation)
+        ikeAuthEapExchange(cfg, ikeMessage, ikePayload, eapIdentifier, ikeSecurityAssociation)
 
         /* -- 4º IKE_AUTH - Authentication --- */
-        val (ueAddr, n3iwfNASAddr) = ikeAuth(ikeMessage, ikePayload, ikeSecurityAssociation)
+        val (ueAddr, n3iwfNASAddr) = ikeAuth(cfg, ikeMessage, ikePayload, ikeSecurityAssociation)
 
         /* -- 5º Stablish TCP communication + NAS Registration --- */
-        nasRegistration(ueAddr, n3iwfNASAddr)
+        nasRegistration(cfg, ueAddr, n3iwfNASAddr)
 
         /* -- 6º UE request PDU session setup --- */
-        val (qosInfo, upIPAddr) = uePDUSessionSetup(ikeMessage, ikePayload, ikeSecurityAssociation)
+        val (qosInfo, upIPAddr) = uePDUSessionSetup(cfg, ikeMessage, ikePayload, ikeSecurityAssociation)
 
         /* -- 7º Data Communication Setup  --- */
-        greTunSetup(qosInfo, upIPAddr, ueAddr)
+        greTunSetup(cfg, qosInfo, upIPAddr, ueAddr)
 
         println("")
         print("UE-non3GPP is ready! ")
@@ -858,11 +854,7 @@ class UEnon3Gpp {
             }
             val sequenceNumber = ue.ulCount.sqn()
             val payload = msg.plainNasEncode()
-            log.trace("payload[${payload!!.size}] = ${payload.toUByteArray().contentToString()}")
-
-            if (payload == null) {
-                throw Exception("Failed to encode NAS message")
-            }
+            log.trace("payload[${payload!!.size}] = ${payload.toUByteArrayString()}")
 
             try {
                 free5gc.nas.security.nasEncrypt(
@@ -888,13 +880,13 @@ class UEnon3Gpp {
                 payloadWithSeqNum)
 
             val payloadWithMac = mac32 + payloadWithSeqNum
-            log.trace("payloadWithMac[${payloadWithMac.size}] = ${payloadWithMac.toUByteArray().contentToString()}")
+            log.trace("payloadWithMac[${payloadWithMac.size}] = ${payloadWithMac.toUByteArrayString()}")
 
             val msgSecurityHeader = byteArrayOf(msg.securityHeader.protocolDiscriminator.toByte(), msg.securityHeader.securityHeaderType.toByte())
-            log.trace("msgSecurityHeader[${msgSecurityHeader.size}] = ${msgSecurityHeader.toUByteArray().contentToString()}")
+            log.trace("msgSecurityHeader[${msgSecurityHeader.size}] = ${msgSecurityHeader.toUByteArrayString()}")
 
             val payloadWithHeader = msgSecurityHeader + payloadWithMac
-            log.trace("payloadWithHeader[${payloadWithHeader.size}] = ${payloadWithHeader.toUByteArray().contentToString()}")
+            log.trace("payloadWithHeader[${payloadWithHeader.size}] = ${payloadWithHeader.toUByteArrayString()}")
 
             ue.ulCount.addOne()
             return encapNasMsgToEnvelope(payloadWithHeader)

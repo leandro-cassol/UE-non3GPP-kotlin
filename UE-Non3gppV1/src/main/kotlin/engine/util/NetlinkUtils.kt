@@ -51,7 +51,7 @@ class NetlinkUtils {
 
         for (ikePayload in ikeMessage.payloads) {
             if (ikePayload.type() == IKEPayloadType.TypeSA) {
-                log.info("Get SA payload")
+                log.trace("Get SA payload")
             } else if (ikePayload.type() == IKEPayloadType.TypeKE) {
                 val remotePublicKeyExchangeValue = (ikePayload as KeyExchange).keyExchangeData
                 val remotePublicKeyExchangeValueBig = remotePublicKeyExchangeValue.removeZero().toBigInteger()

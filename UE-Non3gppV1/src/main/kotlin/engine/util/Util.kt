@@ -18,11 +18,11 @@ class Util {
         return isIP(str) || isDNSName(str)
     }
 
-    fun isIP(str: String): Boolean {
+    private fun isIP(str: String): Boolean {
         return InetAddress.getByName(str) != null
     }
 
-    fun isDNSName(str: String): Boolean {
+    private fun isDNSName(str: String): Boolean {
         if (str == "" || str.replace(".", "").length > 255) {
             return false
         }
@@ -132,4 +132,8 @@ fun UInt.toByteArray(): ByteArray {
 fun ByteArray.toUInt(): UInt {
     val buffer = ByteBuffer.wrap(this)
     return buffer.int.toUInt()
+}
+
+fun ByteArray.toUByteArrayString(): String {
+    return this.toUByteArray().contentToString()
 }

@@ -1,6 +1,7 @@
 package engine.security
 
 import engine.ran.RanUeContext
+import engine.util.toUByteArrayString
 import free5gc.nas.Message
 import free5gc.openapi.models.AccessType
 import org.slf4j.LoggerFactory
@@ -28,7 +29,7 @@ fun nasEncode(ue: RanUeContext?, msg: Message?, securityContextAvailable: Boolea
         sequenceNumber = ue.ulCount.sqn().toByte()
         payload = msg.plainNasEncode()
 
-        log.trace("payload [${payload!!.size}] = ${payload.toUByteArray().contentToString()}")
+        log.trace("payload [${payload!!.size}] = ${payload.toUByteArrayString()}")
 
         free5gc.nas.security.nasEncrypt(
             ue.cipheringAlg,
@@ -39,7 +40,7 @@ fun nasEncode(ue: RanUeContext?, msg: Message?, securityContextAvailable: Boolea
             payload
         )
 
-        log.trace("payload [${payload.size}] = ${payload.toUByteArray().contentToString()}")
+        log.trace("payload [${payload.size}] = ${payload.toUByteArrayString()}")
         // add sequece number
         payload = byteArrayOf(sequenceNumber) + payload
 

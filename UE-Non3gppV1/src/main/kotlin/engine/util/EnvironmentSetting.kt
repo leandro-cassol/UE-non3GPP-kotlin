@@ -54,7 +54,7 @@ class EnvironmentSetting {
         process.waitFor()
         val exitCode = process.exitValue()
         if (exitCode != 0) {
-            log.info("$command failed!")
+            log.error("$command failed!")
             throw RuntimeException("$command failed!")
         } else {
             log.trace("$command executed successfully!")

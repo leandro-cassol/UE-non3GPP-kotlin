@@ -6,6 +6,7 @@ import engine.exchange.pkg.context.IkeSecurityAssociation
 import engine.exchange.pkg.context.N3iwfContext
 import engine.exchange.pkg.ike.message.*
 import engine.util.toHexString
+import engine.util.toUByteArrayString
 import org.slf4j.LoggerFactory
 import java.math.BigInteger
 import java.nio.ByteBuffer
@@ -189,7 +190,7 @@ fun verifyIKEChecksum(key: ByteArray, originData: ByteArray, checksum: ByteArray
 
 // Encryption Algorithm
 fun encryptMessage(key: ByteArray, originData: ByteArray, algorithmType: UShort): ByteArray {
-    log.info("encryptMessage")
+    log.trace("encryptMessage")
 
     return when (algorithmType.toUInt()) {
         EncryptionAlgorithm.ENCR_AES_CBC.value -> {
@@ -218,7 +219,7 @@ fun encryptMessage(key: ByteArray, originData: ByteArray, algorithmType: UShort)
             cipher.doFinal(originPaddingData, 0, originPaddingData.size, cipherText, 0)
 
             val result = initializationVector + cipherText.copyOfRange(0, originPaddingData.size)
-            log.trace("encryptMessage = [${result.size}] " + result.toUByteArray().contentToString())
+            log.trace("encryptMessage = [${result.size}] " + result.toUByteArrayString())
 
             return result
         }
@@ -521,16 +522,14 @@ fun generateKeyForChildSA(ikeSecurityAssociation: IkeSecurityAssociation?,
         throw Exception("Get key length failed")
     }
     if (transformIntegrityAlgorithmForIPSec != null) {
-        val integrityKeyLengthResult = getKeyLength(transformIntegrityAlgorithmForIPSec.transformType,
+        val integrityKeyLengthResult = getKeyLength(
+            transformIntegrityAlgorithmForIPSec.transformType,
             transformIntegrityAlgorithmForIPSec.transformID,
             transformIntegrityAlgorithmForIPSec.attributePresent,
-            transformIntegrityAlgorithmForIPSec.attributeValue)
-        if (integrityKeyLengthResult != null) {
-            lengthIntegrityKeyIPSec = integrityKeyLengthResult.first
-        } else {
-            // Log error: Get key length of an unsupported algorithm. This may imply an unsupported transform is chosen.
-            throw Exception("Get key length failed")
-        }
+            transformIntegrityAlgorithmForIPSec.attributeValue
+        )
+
+        lengthIntegrityKeyIPSec = integrityKeyLengthResult.first
     }
     val totalKeyLength: Int = (lengthEncryptionKeyIPSec + lengthIntegrityKeyIPSec) * 2
 
@@ -651,7 +650,7 @@ fun encryptProcedure(ikeSecurityAssociation: IkeSecurityAssociation?,
     if (ikeSecurityAssociation == null) {
         throw Exception("IKE SA is nil")
     }
-    if (ikePayload == null || ikePayload.isEmpty()) {
+    if (ikePayload.isNullOrEmpty()) {
         throw Exception("No IKE payload to be encrypted")
     }
     if (responseIKEMessage == null) {
@@ -726,88 +725,88 @@ fun getKeyLength(transformType: Byte, transformID: Short, attributePresent: Bool
                 EncryptionAlgorithm.ENCR_IDEA.value -> return Pair(0, false)
                 EncryptionAlgorithm.ENCR_CAST.value -> {
                     if (attributePresent) {
-                        when (attributeValue) {
-                            128.toShort() -> return Pair(16, true)
-                            256.toShort() -> return Pair(0, false)
-                            else -> return Pair(0, false)
+                        return when (attributeValue) {
+                            128.toShort() -> Pair(16, true)
+                            256.toShort() -> Pair(0, false)
+                            else -> Pair(0, false)
                         }
                     }
                     return Pair(0, false)
                 }
                 EncryptionAlgorithm.ENCR_BLOWFISH.value -> {
-                    if (attributePresent) {
+                    return if (attributePresent) {
                         if (attributeValue < 40) {
-                            return Pair(0, false)
+                            Pair(0, false)
                         } else if (attributeValue > 448) {
-                            return Pair(0, false)
+                            Pair(0, false)
                         } else {
-                            return Pair(attributeValue.toInt() / 8, true)
+                            Pair(attributeValue.toInt() / 8, true)
                         }
                     } else {
-                        return Pair(0, false)
+                        Pair(0, false)
                     }
                 }
                 EncryptionAlgorithm.ENCR_3IDEA.value -> return Pair(0, false)
                 EncryptionAlgorithm.ENCR_DES_IV32.value -> return Pair(0, false)
                 EncryptionAlgorithm.ENCR_NULL.value -> return Pair(0, true)
                 EncryptionAlgorithm.ENCR_AES_CBC.value -> {
-                    if (attributePresent) {
+                    return if (attributePresent) {
                         when (attributeValue) {
-                            128.toShort() -> return Pair(16, true)
-                            192.toShort() -> return Pair(24, true)
-                            256.toShort() -> return Pair(32, true)
-                            else -> return Pair(0, false)
+                            128.toShort() -> Pair(16, true)
+                            192.toShort() -> Pair(24, true)
+                            256.toShort() -> Pair(32, true)
+                            else -> Pair(0, false)
                         }
                     } else {
-                        return Pair(0, false)
+                        Pair(0, false)
                     }
                 }
                 EncryptionAlgorithm.ENCR_AES_CTR.value -> {
-                    if (attributePresent) {
+                    return if (attributePresent) {
                         when (attributeValue) {
-                            128.toShort() -> return Pair(20, true)
-                            192.toShort() -> return Pair(28, true)
-                            256.toShort() -> return Pair(36, true)
-                            else -> return Pair(0, false)
+                            128.toShort() -> Pair(20, true)
+                            192.toShort() -> Pair(28, true)
+                            256.toShort() -> Pair(36, true)
+                            else -> Pair(0, false)
                         }
                     } else {
-                        return Pair(0, false)
+                        Pair(0, false)
                     }
                 }
                 else -> return Pair(0, false)
             }
         }
         PayloadType.TypePseudorandomFunction.value -> {
-            when (transformID.toUInt()) {
-                PRFAlgorithm.PRF_HMAC_MD5.value -> return Pair(16, true)
-                PRFAlgorithm.PRF_HMAC_SHA1.value -> return Pair(20, true)
-                PRFAlgorithm.PRF_HMAC_TIGER.value -> return Pair(0, false)
-                else -> return Pair(0, false)
+            return when (transformID.toUInt()) {
+                PRFAlgorithm.PRF_HMAC_MD5.value -> Pair(16, true)
+                PRFAlgorithm.PRF_HMAC_SHA1.value -> Pair(20, true)
+                PRFAlgorithm.PRF_HMAC_TIGER.value -> Pair(0, false)
+                else -> Pair(0, false)
             }
         }
         PayloadType.TypeIntegrityAlgorithm.value -> {
-            when (transformID.toUInt()) {
-                AuthenticationAlgorithm.AUTH_NONE.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_HMAC_MD5_96.value -> return Pair(16, true)
-                AuthenticationAlgorithm.AUTH_HMAC_SHA1_96.value -> return Pair(20, true)
-                AuthenticationAlgorithm.AUTH_DES_MAC.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_KPDK_MD5.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_AES_XCBC_96.value -> return Pair(0, false)
-                else -> return Pair(0, false)
+            return when (transformID.toUInt()) {
+                AuthenticationAlgorithm.AUTH_NONE.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_HMAC_MD5_96.value -> Pair(16, true)
+                AuthenticationAlgorithm.AUTH_HMAC_SHA1_96.value -> Pair(20, true)
+                AuthenticationAlgorithm.AUTH_DES_MAC.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_KPDK_MD5.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_AES_XCBC_96.value -> Pair(0, false)
+                else -> Pair(0, false)
             }
         }
         PayloadType.TypeDiffieHellmanGroup.value -> {
-            when (transformID.toUInt()) {
-                DiffieHellmanGroup.DH_NONE.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_768_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_1024_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_1536_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_2048_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_3072_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_4096_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_6144_BIT_MODP.value -> return Pair(0, false)
-                DiffieHellmanGroup.DH_8192_BIT_MODP.value -> return Pair(0, false)
-                else -> return Pair(0, false)
+            return when (transformID.toUInt()) {
+                DiffieHellmanGroup.DH_NONE.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_768_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_1024_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_1536_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_2048_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_3072_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_4096_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_6144_BIT_MODP.value -> Pair(0, false)
+                DiffieHellmanGroup.DH_8192_BIT_MODP.value -> Pair(0, false)
+                else -> Pair(0, false)
             }
         }
         else -> return Pair(0, false)
@@ -818,22 +817,22 @@ fun getOutputLength(transformType: UByte, transformID: UShort, attributePresent:
                     attributeValue: UShort): Pair<Int, Boolean> {
     when (transformType.toUInt()) {
         PayloadType.TypePseudorandomFunction.value -> {
-            when (transformID.toUInt()) {
-                PRFAlgorithm.PRF_HMAC_MD5.value -> return Pair(16, true)
-                PRFAlgorithm.PRF_HMAC_SHA1.value -> return Pair(20, true)
-                PRFAlgorithm.PRF_HMAC_TIGER.value -> return Pair(0, false)
-                else -> return Pair(0, false)
+            return when (transformID.toUInt()) {
+                PRFAlgorithm.PRF_HMAC_MD5.value -> Pair(16, true)
+                PRFAlgorithm.PRF_HMAC_SHA1.value -> Pair(20, true)
+                PRFAlgorithm.PRF_HMAC_TIGER.value -> Pair(0, false)
+                else -> Pair(0, false)
             }
         }
         PayloadType.TypeIntegrityAlgorithm.value -> {
-            when (transformID.toUInt()) {
-                AuthenticationAlgorithm.AUTH_NONE.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_HMAC_MD5_96.value -> return Pair(12, true)
-                AuthenticationAlgorithm.AUTH_HMAC_SHA1_96.value -> return Pair(12, true)
-                AuthenticationAlgorithm.AUTH_DES_MAC.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_KPDK_MD5.value -> return Pair(0, false)
-                AuthenticationAlgorithm.AUTH_AES_XCBC_96.value -> return Pair(0, false)
-                else -> return Pair(0, false)
+            return when (transformID.toUInt()) {
+                AuthenticationAlgorithm.AUTH_NONE.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_HMAC_MD5_96.value -> Pair(12, true)
+                AuthenticationAlgorithm.AUTH_HMAC_SHA1_96.value -> Pair(12, true)
+                AuthenticationAlgorithm.AUTH_DES_MAC.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_KPDK_MD5.value -> Pair(0, false)
+                AuthenticationAlgorithm.AUTH_AES_XCBC_96.value -> Pair(0, false)
+                else -> Pair(0, false)
             }
         }
         else -> return Pair(0, false)
